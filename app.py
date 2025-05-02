@@ -14,7 +14,7 @@ import requests
 
 app = Flask(__name__)
 # IP Address
-_URL = 'http://10.0.0.3'
+_URL = 'http://192.168.18.173'
 # Default Streaming Port
 _PORT = '81'
 # Default streaming route
