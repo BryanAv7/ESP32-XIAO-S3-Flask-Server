@@ -85,6 +85,8 @@ def video_capture():
             try:
                 img_data = BytesIO(chunk)
                 cv_img = cv2.imdecode(np.frombuffer(img_data.read(), np.uint8), 1)
+                
+                # --Parte 1-A: Calcular los FPS, Detección de movimiento--
 
                 # Imagen original con FPS
                 fps, prev_time = calcular_fps(prev_time)
@@ -103,6 +105,8 @@ def video_capture():
                 motion_color = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR)
                 cv2.putText(motion_color, "DMovimiento: MoG", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                
+                # --Parte 1-A: Aplicación de filtros--
 
                 # Filtro: Ecualización de histograma (mejora el contraste)
                 equ = cv2.equalizeHist(gray)
@@ -128,6 +132,9 @@ def video_capture():
                 cv2.putText(gamma_color, "Filtro Gamma", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
+
+                # --Parte 1-B: Generación de Ruido (sliders)--
+
                 # Generación de Ruido(Ruido Gaussiano, Speckle y la combinación de ambos)
                 img_gaussiana = ruidoGaussiano(cv_img, media_gaussiana, sigma_gaussiana)
                 img_speckle = ruidoSpeckle(cv_img, varianza_speckle)
@@ -141,22 +148,64 @@ def video_capture():
                 cv2.putText(img_combinada, "RCombinado (G+S)", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 
+                # --Parte 1-B: Filtros (Gaussiana, mediana y Blur)--
+
                 # Ruido Sal y Pimienta (previa a la comparación con los filtros suavizado)
                 img_sal_pimienta = ruidoSalPimienta(cv_img, cantidad_sal_pimienta)
                 cv2.putText(img_sal_pimienta, "F: Sal y Pimienta", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 
-                # Se utiliza la imagen de respaldo para evitar el choque de las etiquetas
-                imagen_sal_pimienta2 = ruidoSalPimienta(cv_img, cantidad_sal_pimienta) 
+                # Ruido Sal y Pimienta: img de respaldo para evitar el choque de las etiquetas
+                imagen_sal_pimienta2 = ruidoSalPimienta(cv_img, cantidad_sal_pimienta)  # se utiliza para la aplicación de filtros
+                imagen_sal_pimienta3 = ruidoSalPimienta(cv_img, cantidad_sal_pimienta) # se utiliza para la comparación en la detección de bordes
 
                 # Aplicación de filtros (mediana, blur y gaussiano) y la visualización de sus etiquetas
                 mediana, blur, gauss = aplicar_filtros(imagen_sal_pimienta2)
+                cv2.putText(gauss, "Filtro Gaussiano", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                
+                
+                mediana, blur, gauss2 = aplicar_filtros(imagen_sal_pimienta2)
                 cv2.putText(mediana, "Filtro Mediana", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 cv2.putText(blur, "Filtro Blur", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-                cv2.putText(gauss, "Filtro Gaussiano", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                
+                
+                # ---Parte 1-B: Detección de bordes (Comparación img con ruido vs detección de bordes)---
+
+                # Sobel con ruido
+                img_1 = cv2.cvtColor(imagen_sal_pimienta3, cv2.COLOR_BGR2GRAY)
+                sobelx_ruido = cv2.Sobel(img_1, cv2.CV_64F, 1, 0, ksize=3)
+                sobely_ruido = cv2.Sobel(img_1, cv2.CV_64F, 0, 1, ksize=3)
+                sobelTotal_ruido = cv2.magnitude(sobelx_ruido, sobely_ruido)
+                sobelTotal_ruido = np.uint8(np.clip(sobelTotal_ruido, 0, 255))
+                sobel_ruido = cv2.cvtColor(sobelTotal_ruido, cv2.COLOR_GRAY2BGR)
+                cv2.putText(sobel_ruido, "Sobel con Ruido", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                
+                # Canny con ruido
+                canny_ruido = cv2.Canny(img_1, 100, 200)
+                canny_ruido = cv2.cvtColor(canny_ruido, cv2.COLOR_GRAY2BGR)
+                cv2.putText(canny_ruido, "Canny con Ruido", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                
+                # Detección de bordes
+                # Sobel Total: Nos ayuda a detectar cambios bruscos en la imagen(bordes)
+                img_2 = cv2.cvtColor(gauss2, cv2.COLOR_BGR2GRAY)
+                sobelx = cv2.Sobel(img_2, cv2.CV_64F, 1, 0, ksize=3)
+                sobely = cv2.Sobel(img_2, cv2.CV_64F, 0, 1, ksize=3)
+                sobelTotal = cv2.magnitude(sobelx, sobely)
+                sobelTotal = np.uint8(np.clip(sobelTotal, 0, 255))
+                img_sobel = cv2.cvtColor(sobelTotal, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_sobel, "DB: Sobel Total", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+                # Canny: Nos ayuda a detectar los bordes finos y definidos
+                canny = cv2.Canny(img_2, 100, 200)
+                img_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_canny, "DB: Canny", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                 # Visualización de resultados(frames)
                 height, width, _ = original.shape
@@ -166,8 +215,10 @@ def video_capture():
                 fila_3 = np.hstack((img_gaussiana, img_speckle, img_combinada))
                 fila_5 = np.hstack((img_sal_pimienta, black_img, black_img))
                 fila_4 = np.hstack((mediana, blur, gauss))
+                fila_6 = np.hstack((sobel_ruido, img_sobel, black_img))
+                fila_7 = np.hstack((canny_ruido, img_canny, black_img))
 
-                combined = np.vstack((fila_1, fila_2, fila_3, fila_5, fila_4))
+                combined = np.vstack((fila_1, fila_2, fila_3, fila_5, fila_4, fila_6, fila_7))
 
                 # Codificación y envío de imagen
                 (flag, encodedImage) = cv2.imencode(".jpg", combined)
