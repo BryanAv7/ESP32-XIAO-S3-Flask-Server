@@ -234,6 +234,82 @@ def video_capture():
                 print("Error:", e)
                 continue
 
+
+# Función para agregar texto a la imagen (escala de grises)
+def texto(img, texto, pos=(10, 30), tamaño_fuente=1, color=(255, 255, 255)):
+    img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    cv2.putText(img_color, texto, pos, cv2.FONT_HERSHEY_SIMPLEX, tamaño_fuente, color, 2)
+    return img_color
+
+
+# --Parte 2: Operaciones morfológicas--
+def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[5, 15, 37]):  # Tamaño del kernel
+    resultados = []  # Lista para almacenar los resultados
+
+    for size in t_kernel:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (size, size))
+
+        erosion = cv2.erode(imagen, kernel, iterations=1)
+        dilatacion = cv2.dilate(imagen, kernel, iterations=1)
+        top_hat = cv2.morphologyEx(imagen, cv2.MORPH_TOPHAT, kernel)
+        black_hat = cv2.morphologyEx(imagen, cv2.MORPH_BLACKHAT, kernel)
+        realce = cv2.add(imagen, cv2.subtract(top_hat, black_hat))  # Imagen Original + (Top Hat – Black Hat)
+
+        # Agregar etiquetas a cada imagen
+        img_etiquetas = [
+            texto(imagen, f"{nombreImg} - Original k:{size}"),  # K: representa el tamaño del kernel
+            texto(erosion, f"Erosion k:{size}"), 
+            texto(dilatacion, f"Dilatacion k:{size}"),
+            texto(top_hat, f"Top Hat k:{size}"),
+            texto(black_hat, f"Black Hat k:{size}"),
+            texto(realce, f"Realce k:{size}")  # Imagen Original + (Top Hat – Black Hat)
+        ]
+
+        # Visualización de resultados
+        fila = np.hstack(img_etiquetas)
+        resultados.append(fila)
+
+    return np.vstack(resultados)
+
+
+# Función para la manipulación de imágenes
+def manipulacionImg():
+    rutas = [
+        "static/img1.jpg",  # Aqui definimos la ruta de la imagen (carpeta static)
+        "static/img2.jpg"
+    ]
+
+    nombres = ["Imagen 1", "Imagen 2"]  # Nombres de las imágenes
+
+    imagenes = []
+    for path in rutas:
+        img = cv2.imread(path, 0)
+        if img is None:
+            print(f"Error al cargar la imagen: {path}")
+            return None
+        imagenes.append(img)
+
+    # Redimensionar todas al tamaño de la primera
+    posicion1, posicion2 = imagenes[0].shape
+    imagenes = [cv2.resize(img, (posicion2, posicion1)) for img in imagenes]
+
+    # Procesamiento de las imagenes
+    resultados = [ope_morfologicas(img, nombre) for img, nombre in zip(imagenes, nombres)]
+
+    # Separador visual
+    separador = np.zeros_like(resultados[0][0:30, :])  # tira negra de 30 px de alto
+    res_final = np.vstack([resultados[0], separador, resultados[1]])
+
+    # Codificar como JPEG
+    (flag, encodedImage) = cv2.imencode(".jpg", res_final)
+    if not flag:
+        return None
+    return encodedImage
+
+
+
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -243,6 +319,15 @@ def index():
 def video_stream():
     return Response(video_capture(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")
+
+# Procesamiento de las imagenes(operaciones morfologicas)
+@app.route('/morfologia')
+def morfologia():
+    resultado = manipulacionImg()
+    if resultado is None:
+        return "Error procesando imágenes", 500
+    return Response(resultado.tobytes(), mimetype="image/jpeg")
+
 
 # Actualizar los parámetros de ruido (desde el cliente)
 @app.route("/update_params", methods=["POST"])

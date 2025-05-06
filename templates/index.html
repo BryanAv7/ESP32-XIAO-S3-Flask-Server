@@ -189,10 +189,22 @@
         <!-- Video Stream -->
         <img src="/video_stream">
 <br>
-        <h1>Parte 2</h1>
-<br>
 
+
+   <!-- Parte 2: Procesamiento morfológico -->
+        <h1>Parte 2</h1>
+        <div class="slider-container">
+            <h3>Operaciones Morfológicas</h3>
+            <p>Imagenes medicas aplicando: Erosión, Dilatación, TopHat, BlackHat y TopHat-BlackHat</p>
+            <button onclick="cargarMorfologia()">Ver Resultados</button>
+        </div>
+<br>
     </div>
+
+<!-- Imagen procesada -->
+<div id="resultado-morfologia" style="margin-top: 20px;">
+    <img id="morfologia-img" src="" alt="Resultado morfológico" style="display: none;">
+</div>
 
     <script>
         // Actualizarción de los valores de los sliders
@@ -205,6 +217,14 @@
         document.getElementById("varianza_speckle").oninput = function() {
             document.getElementById("varianza_speckle_value").innerText = this.value;
         }
+
+
+
+        function cargarMorfologia() {
+        const img = document.getElementById("morfologia-img");
+        img.src = "/morfologia?" + new Date().getTime(); // Previene caché
+        img.style.display = "block";
+    }
 
         // Enviar parámetros al servidor(metodo:post)
         function updateParams() {
