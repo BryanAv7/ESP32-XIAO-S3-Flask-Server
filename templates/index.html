@@ -5,65 +5,197 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        .container {
+        
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: #f1f1bc;
-            color: black;
-            text-align: center;
         }
-        .containerHeader {
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c2c2c; 
+            color: #e0e0e0; 
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        /* Contenedor principal */
+        .container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            max-width: 800px;
+            margin: 0 auto;
+            padding-top: 20px;
         }
-        .left-align {
-            text-align: left;
-        }
-        .slider {
+
+        .containerHeader img {
             width: 50%;
-            margin: 10px;
+            margin-bottom: 20px;
+        }
+
+        
+        .slider-container {
+            background-color: #1e1e1e; 
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border: 2px solid #76c7c0; 
+        }
+
+        .slider-container h3 {
+            margin-bottom: 15px;
+            font-weight: normal;
+            color: #b0b0b0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .controls label {
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .slider {
+            width: 80%;
+            margin: 0;
+            appearance: none;
+            height: 8px;
+            background: #555;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            background: #76c7c0; 
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #76c7c0; 
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        /* botones */
+        button {
+            background-color: #76c7c0; 
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #68b1ad; 
+        }
+
+        
+        img {
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 3px solid #76c7c0; 
+        }
+
+        
+        .info-container {
+            background-color: #1e1e1e; 
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border: 2px solid #76c7c0; 
+            color: #ddd;
+        }
+
+        .info-container h2 {
+            margin-bottom: 10px;
+            color: #ffffff;
         }
     </style>
     <title>Videostreaming ESP32-CAM</title>
 </head>
-<body class="container">
-    <div class="containerHeader">
-        <h1>Video Streaming: Camara ESP32-CAM</h1>
-        <img src="{{ url_for('static', filename='Header.webp') }}" alt="Image header" width="50%">
-        <h2 class="left-align">Nombre: Bryan Avila</h2>
-        <h2 class="left-align">Carrera: Computación</h2>
+<body>
+    <div class="container">
+        <div class="containerHeader">
+            <h1>Video Streaming: Camara ESP32-CAM</h1>
+            <img src="{{ url_for('static', filename='Header.webp') }}" alt="Image header">
+        </div>
+
+        <!-- Datos personales -->
+        <div class="info-container">
+            <h2>Nombre: Bryan Avila</h2>
+            <h2>Carrera: Computación</h2>
+        </div>
+<br>
         <h1>Parte 1-A - 1-B</h1>
-    </div>
 
-    <!-- Video Stream -->
-    <img src="/video_stream">
+        <!-- Sliders para ajustar parámetros de ruido -->
+        <div class="slider-container">
+            <h3>Parámetros para la generación de Ruido(Fila 3):</h3>
 
-    <!-- Sliders para ajustar parámetros de ruido -->
-    <div>
-        <h3>Parámetros para la generación de Ruido(fila3):</h3>
-        <label for="media_gaussiana">Media Gaussiana:</label>
-        <input type="range" id="media_gaussiana" name="media_gaussiana" min="-50" max="50" step="1" value="0" class="slider">
-        <span id="media_gaussiana_value">0</span>
-        <br>
-        
-        <label for="sigma_gaussiana">Desviación Estándar Gaussiana:</label>
-        <input type="range" id="sigma_gaussiana" name="sigma_gaussiana" min="1" max="100" step="1" value="20" class="slider">
-        <span id="sigma_gaussiana_value">20</span>
-        <br>
+            <div class="controls">
+                <label for="media_gaussiana">Media Gaussiana:</label>
+                <input type="range" id="media_gaussiana" name="media_gaussiana" min="-50" max="50" step="1" value="0" class="slider">
+                <span id="media_gaussiana_value" class="value-display">0</span>
+            </div>
 
-        <label for="varianza_speckle">Varianza Speckle:</label>
-        <input type="range" id="varianza_speckle" name="varianza_speckle" min="0" max="1" step="0.01" value="0.04" class="slider">
-        <span id="varianza_speckle_value">0.04</span>
-        <br>
+            <div class="controls">
+                <label for="sigma_gaussiana">Desviación Estándar Gaussiana:</label>
+                <input type="range" id="sigma_gaussiana" name="sigma_gaussiana" min="1" max="100" step="1" value="20" class="slider">
+                <span id="sigma_gaussiana_value" class="value-display">20</span>
+            </div>
 
-        <button onclick="updateParams()">Actualizar Campos</button><br>
+            <div class="controls">
+                <label for="varianza_speckle">Varianza Speckle:</label>
+                <input type="range" id="varianza_speckle" name="varianza_speckle" min="0" max="1" step="0.01" value="0.04" class="slider">
+                <span id="varianza_speckle_value" class="value-display">0.04</span>
+            </div>
+
+            <button onclick="updateParams()">Actualizar Campos</button>
+        </div>
+
+        <!-- Video Stream -->
+        <img src="/video_stream">
+<br>
+        <h1>Parte 2</h1>
+<br>
+
     </div>
 
     <script>
-        // Actualizar valores en tiempo real al mover los sliders
+        // Actualizarción de los valores de los sliders
         document.getElementById("media_gaussiana").oninput = function() {
             document.getElementById("media_gaussiana_value").innerText = this.value;
         }
@@ -74,7 +206,7 @@
             document.getElementById("varianza_speckle_value").innerText = this.value;
         }
 
-        // Enviar parámetros al servidor
+        // Enviar parámetros al servidor(metodo:post)
         function updateParams() {
             const media_gaussiana = document.getElementById("media_gaussiana").value;
             const sigma_gaussiana = document.getElementById("sigma_gaussiana").value;
