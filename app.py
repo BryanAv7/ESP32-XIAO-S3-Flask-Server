@@ -75,6 +75,16 @@ def aplicar_filtros(imagen, ksize=7):
     filtro_gauss = cv2.GaussianBlur(imagen, (ksize, ksize), 0)
     return filtro_mediana, filtro_blur, filtro_gauss
 
+
+# Función para crear espaciadores con texto(diseño de bordes)
+def crear_espaciador(texto, width):
+    espaciador = np.full((30, width * 3, 3), (255, 255, 255), dtype=np.uint8)
+    cv2.putText(espaciador, texto, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+    return espaciador
+
+
+# ---- FUNCION PRINCIPAL PARA LA PARTE 1-A Y 1-B ----
+
 # Función para capturar y transmitir el video (ESP32)
 def video_capture():
     res = requests.get(stream_url, stream=True)
@@ -230,8 +240,8 @@ def video_capture():
                 
 
                 # Visualización de resultados(frames)
-                height, width, _ = original.shape
-                black_img = np.zeros((height, width, 3), dtype=np.uint8)
+                height, width, _ = original.shape 
+                black_img = np.zeros((height, width, 3), dtype=np.uint8) 
                 fila_1 = np.hstack((original, img_escalagrises, motion_color))
                 fila_2 = np.hstack((img_histograma, img_clahe, img_gamma))
                 fila_8 = np.hstack((bitwise_and, bitwise_or, bitwise_xor))
@@ -241,7 +251,18 @@ def video_capture():
                 fila_6 = np.hstack((sobel_ruido, img_sobel, black_img))
                 fila_7 = np.hstack((canny_ruido, img_canny, black_img))
 
-                combined = np.vstack((fila_1, fila_2, fila_8, fila_3, fila_5, fila_4, fila_6, fila_7))
+                # Diseño de los bordes
+                esp_1 = crear_espaciador("Video Original / Escala de Grises / Detector de Movimiento(Mixture of Gaussians)", width)
+                esp_2 = crear_espaciador("Aplicacion de Filtros: Histograma / CLAHE / Gamma", width)
+                esp_3 = crear_espaciador("Operaciones Bitwise: AND/OR/XOR", width)
+                esp_4 = crear_espaciador("Generacion de Ruido(parametros): Gauss / Speckle / Combinado", width)
+                esp_5 = crear_espaciador("Video Sal y Pimienta: Previa a comparacion con los Filtros", width)
+                esp_6 = crear_espaciador("Filtros(k:5): Mediana / Blur / Gauss", width)
+                esp_7 = crear_espaciador("Detector de bordes: Sobel con Ruido / Sobel total", width)
+                esp_8 = crear_espaciador("Detector de bordes: Canny con Ruido / Canny", width)
+                
+                # Resultados de la visualización
+                combined = np.vstack((esp_1, fila_1, esp_2, fila_2, esp_3, fila_8, esp_4, fila_3, esp_5, fila_5, esp_6, fila_4, esp_7, fila_6, esp_8, fila_7))
 
                 # Codificación y envío de imagen
                 (flag, encodedImage) = cv2.imencode(".jpg", combined)
@@ -258,7 +279,7 @@ def video_capture():
                 continue
 
 
-# Función para agregar texto a la imagen (escala de grises)
+# Función para agregar texto a las imagenes medicas (parte 2)
 def texto(img, texto, pos=(10, 30), tamaño_fuente=1, color=(255, 255, 255)):
     img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.putText(img_color, texto, pos, cv2.FONT_HERSHEY_SIMPLEX, tamaño_fuente, color, 2)
