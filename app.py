@@ -243,11 +243,11 @@ def texto(img, texto, pos=(10, 30), tamaño_fuente=1, color=(255, 255, 255)):
 
 
 # --Parte 2: Operaciones morfológicas--
-def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[5, 15, 37]):  # Tamaño del kernel
+def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[(5, 5), (15, 15), (37, 37)]):  # Tamaño del kernel
     resultados = []  # Lista para almacenar los resultados
 
     for size in t_kernel:
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (size, size))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, size)
 
         erosion = cv2.erode(imagen, kernel, iterations=1)
         dilatacion = cv2.dilate(imagen, kernel, iterations=1)
@@ -255,14 +255,17 @@ def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[5, 15, 37]):  # Tama�
         black_hat = cv2.morphologyEx(imagen, cv2.MORPH_BLACKHAT, kernel)
         realce = cv2.add(imagen, cv2.subtract(top_hat, black_hat))  # Imagen Original + (Top Hat – Black Hat)
 
+# Texto con el tamaño de kernel como tupla
+        size_str = f"{size[0]}x{size[1]}"
+        
         # Agregar etiquetas a cada imagen
         img_etiquetas = [
-            texto(imagen, f"{nombreImg} - Original k:{size}"),  # K: representa el tamaño del kernel
-            texto(erosion, f"Erosion k:{size}"), 
-            texto(dilatacion, f"Dilatacion k:{size}"),
-            texto(top_hat, f"Top Hat k:{size}"),
-            texto(black_hat, f"Black Hat k:{size}"),
-            texto(realce, f"Realce k:{size}")  # Imagen Original + (Top Hat – Black Hat)
+            texto(imagen, f"{nombreImg} - Orig k:{size_str}"),  # K: representa el tamaño del kernel
+            texto(erosion, f"Erosion k:{size_str}"), 
+            texto(dilatacion, f"Dilatacion k:{size_str}"),
+            texto(top_hat, f"Top Hat k:{size_str}"),
+            texto(black_hat, f"Black Hat k:{size_str}"),
+            texto(realce, f"Realce k:{size_str}")  # Imagen Original + (Top Hat – Black Hat)
         ]
 
         # Visualización de resultados
@@ -276,10 +279,11 @@ def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[5, 15, 37]):  # Tama�
 def manipulacionImg():
     rutas = [
         "static/img1.jpg",  # Aqui definimos la ruta de la imagen (carpeta static)
-        "static/img2.jpg"
+        "static/img2.jpg",
+        "static/img3.jpg"
     ]
 
-    nombres = ["Imagen 1", "Imagen 2"]  # Nombres de las imágenes
+    nombres = ["Imagen 1", "Imagen 2", "Imagen 3"]  # Nombres de las imágenes
 
     imagenes = []
     for path in rutas:
@@ -298,7 +302,7 @@ def manipulacionImg():
 
     # Separador visual
     separador = np.zeros_like(resultados[0][0:30, :])  # tira negra de 30 px de alto
-    res_final = np.vstack([resultados[0], separador, resultados[1]])
+    res_final = np.vstack([resultados[0], separador, resultados[1], separador, resultados[2]])
 
     # Codificar como JPEG
     (flag, encodedImage) = cv2.imencode(".jpg", res_final)
