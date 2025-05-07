@@ -91,18 +91,20 @@ def video_capture():
                 # Imagen original con FPS
                 fps, prev_time = calcular_fps(prev_time)
                 original = cv_img.copy()
+                original2 = cv_img.copy() # este frame se utiliza para las operaciones bitwise
                 cv2.putText(original, f"FPS: {fps:.2f}", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                 # Escala de grises
                 gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-                gray_with_label = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-                cv2.putText(gray_with_label, "Img: Escala de Grises", (20, 30),
+                img_escalagrises = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_escalagrises, "Img: Escala de Grises", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
                 # Detección de movimiento (aplicando el mgo)
                 motion_mask = mgo.apply(cv_img, LEARNING_RATE)
                 motion_color = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR)
+                motion_color2 = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR) # este frame se utiliza para las operaciones bitwise
                 cv2.putText(motion_color, "DMovimiento: MoG", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 
@@ -110,15 +112,15 @@ def video_capture():
 
                 # Filtro: Ecualización de histograma (mejora el contraste)
                 equ = cv2.equalizeHist(gray)
-                equ_color = cv2.cvtColor(equ, cv2.COLOR_GRAY2BGR)
-                cv2.putText(equ_color, "EHistograma", (20, 30),
+                img_histograma = cv2.cvtColor(equ, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_histograma, "EHistograma", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
                 # Filtro: CLAHE (mejorar las zonas con bajos contrastes)
                 clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
                 clahe_img = clahe.apply(gray)
-                clahe_color = cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR)
-                cv2.putText(clahe_color, "CLAHE", (20, 30),
+                img_clahe = cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_clahe, "CLAHE", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 
                 #--Investigación--
@@ -128,11 +130,30 @@ def video_capture():
                 for i in range(256):
                     lookUpTable[0][i] = np.clip((i * gamma), 0, 255)
                 gamma_image = cv2.LUT(gray, lookUpTable)
-                gamma_color = cv2.cvtColor(gamma_image, cv2.COLOR_GRAY2BGR)
-                cv2.putText(gamma_color, "Filtro Gamma", (20, 30),
+                img_gamma = cv2.cvtColor(gamma_image, cv2.COLOR_GRAY2BGR)
+                cv2.putText(img_gamma, "Filtro Gamma", (20, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-
-
+                
+                
+                # --Parte 1-A: Operaciones bitwise (AND, OR, XOR)--
+                
+                # Operaciones bitwise: AND, OR, XOR
+                ope_bitwise = motion_color2 # mascara de movimiento a color
+                
+                # Operaciones bitwise
+                bitwise_and = cv2.bitwise_and(original2, original2, mask=motion_mask)  # AND: detecta areas de movimiento
+                bitwise_or = cv2.bitwise_or(original2, ope_bitwise) # OR: combina la imagen original con la imagen de movimiento
+                bitwise_xor = cv2.bitwise_xor(original2, ope_bitwise) # XOR: resalta las diferencias entre la img original-movimiento
+                
+                # Etiquetas de las operaciones bitwise
+                cv2.putText(bitwise_and, "AND", (10, 30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(bitwise_or, "OR", (10, 30), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(bitwise_xor, "XOR", (10, 30), 
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                
+                
                 # --Parte 1-B: Generación de Ruido (sliders)--
 
                 # Generación de Ruido(Ruido Gaussiano, Speckle y la combinación de ambos)
@@ -206,19 +227,21 @@ def video_capture():
                 img_canny = cv2.cvtColor(canny, cv2.COLOR_GRAY2BGR)
                 cv2.putText(img_canny, "DB: Canny", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                
 
                 # Visualización de resultados(frames)
                 height, width, _ = original.shape
                 black_img = np.zeros((height, width, 3), dtype=np.uint8)
-                fila_1 = np.hstack((original, gray_with_label, motion_color))
-                fila_2 = np.hstack((equ_color, clahe_color, gamma_color))
+                fila_1 = np.hstack((original, img_escalagrises, motion_color))
+                fila_2 = np.hstack((img_histograma, img_clahe, img_gamma))
+                fila_8 = np.hstack((bitwise_and, bitwise_or, bitwise_xor))
                 fila_3 = np.hstack((img_gaussiana, img_speckle, img_combinada))
                 fila_5 = np.hstack((img_sal_pimienta, black_img, black_img))
                 fila_4 = np.hstack((mediana, blur, gauss))
                 fila_6 = np.hstack((sobel_ruido, img_sobel, black_img))
                 fila_7 = np.hstack((canny_ruido, img_canny, black_img))
 
-                combined = np.vstack((fila_1, fila_2, fila_3, fila_5, fila_4, fila_6, fila_7))
+                combined = np.vstack((fila_1, fila_2, fila_8, fila_3, fila_5, fila_4, fila_6, fila_7))
 
                 # Codificación y envío de imagen
                 (flag, encodedImage) = cv2.imencode(".jpg", combined)
@@ -265,7 +288,7 @@ def ope_morfologicas(imagen, nombreImg="Imagen", t_kernel=[(5, 5), (15, 15), (37
             texto(dilatacion, f"Dilatacion k:{size_str}"),
             texto(top_hat, f"Top Hat k:{size_str}"),
             texto(black_hat, f"Black Hat k:{size_str}"),
-            texto(realce, f"Realce k:{size_str}")  # Imagen Original + (Top Hat – Black Hat)
+            texto(realce, f"Combinacion T-B Hat k:{size_str}")  # Imagen Original + (Top Hat – Black Hat)
         ]
 
         # Visualización de resultados
@@ -309,7 +332,6 @@ def manipulacionImg():
     if not flag:
         return None
     return encodedImage
-
 
 
 
