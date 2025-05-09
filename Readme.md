@@ -5,7 +5,7 @@
 
 ## Descripción
 
-El proyecto consiste en la captura video desde una cámara ESP32-CAM y lo transmite a través de una interfaz web(Flask), donde se aplican diversas técnicas de procesamiento de imágenes en tiempo real y el procesamiento de imagenes medicas con operaciones morfológicas.
+Este proyecto consiste en la captura video desde una cámara ESP32-CAM y se lo transmite a través de una interfaz web(Flask), donde se aplicarán diversas técnicas de procesamiento de imágenes en tiempo real y el procesamiento de imagenes medicas con operaciones morfológicas.
 
 ## Índice
 
